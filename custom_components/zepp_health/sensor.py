@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-from pathlib import Path
 
 from homeassistant.components.sensor import (
     SensorEntity,
-    SensorDeviceClass,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -41,27 +38,13 @@ async def async_setup_entry(
         return
 
     entities = []
-    latest = data.get("latest", {})
 
     for sensor_key, sensor_def in SENSOR_DEFINITIONS.items():
         # Skip the "resting_hr" alias
         if sensor_key == "resting_hr":
             continue
 
-        # Get latest value
-        category = sensor_def["category"]
-        field = sensor_def["field"]
-        dataset = data.get("data", {}).get(category, [])
-
-        # Find the most recent value for this field
-        value = None
-        last_date = None
-        for entry_data in reversed(dataset):
-            v = entry_data.get(field)
-            if v is not None:
-                value = v
-                last_date = entry_data.get("date")
-                break
+        value, last_date = _find_latest_value(data, sensor_def)
 
         entities.append(
             ZeppHealthSensor(
@@ -76,13 +59,26 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class ZeppHealthSensor(SensorEntity):
+def _find_latest_value(data: dict, sensor_def: dict) -> tuple:
+    """Find the most recent value for a sensor from the export data."""
+    category = sensor_def["category"]
+    field = sensor_def["field"]
+    dataset = data.get("data", {}).get(category, [])
+
+    for entry_data in reversed(dataset):
+        val = entry_data.get(field)
+        if val is not None:
+            return val, entry_data.get("date")
+    return None, None
+
+
+class ZeppHealthSensor(SensorEntity):  # pylint: disable=too-many-instance-attributes
     """A sensor representing a Zepp health metric with full history."""
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         sensor_key: str,
         sensor_def: dict,
@@ -92,14 +88,14 @@ class ZeppHealthSensor(SensorEntity):
     ) -> None:
         """Initialize the sensor."""
         self._sensor_key = sensor_key
+        self._sensor_def = sensor_def
+        self._file_path = file_path
         self._attr_unique_id = f"zepp_health_{sensor_key}"
         self._attr_name = sensor_def["name"]
         self._attr_native_unit_of_measurement = sensor_def["unit"]
         self._attr_icon = sensor_def["icon"]
         self._attr_native_value = value
         self._last_date = last_date
-        self._file_path = file_path
-        self._sensor_def = sensor_def
 
     @property
     def statistic_id(self) -> str:

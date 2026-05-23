@@ -9,7 +9,7 @@ import os
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.components.file_upload import FileUploadData
 from homeassistant.helpers.selector import FileSelector, FileSelectorConfig
 
 from .const import DOMAIN, STORAGE_DIR, EXPORT_FILENAME
@@ -22,7 +22,7 @@ class ZeppHealthConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, _user_input=None):
         """Handle the initial step - choose input method."""
         return self.async_show_menu(
             step_id="user",
@@ -52,7 +52,7 @@ class ZeppHealthConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         )
                 except json.JSONDecodeError:
                     errors["file"] = "invalid_json"
-                except Exception as err:
+                except (OSError, KeyError) as err:
                     _LOGGER.error("Upload error: %s", err)
                     errors["file"] = "unknown"
 
@@ -110,8 +110,6 @@ class ZeppHealthConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _read_uploaded_file(self, file_id: str) -> str:
         """Read an uploaded file from HA's file upload store."""
-        from homeassistant.components.file_upload import FileUploadData
-
         upload = await FileUploadData.async_get_instance(self.hass)
         file_path = upload.get_file_path(file_id)
         content = await self.hass.async_add_executor_job(_read_file, str(file_path))
