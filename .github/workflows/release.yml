@@ -18,6 +18,6 @@ jobs:
           zip -r ../../zepp_health.zip .
 
       - name: Upload release asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: zepp_health.zip
