@@ -1,0 +1,14 @@
+{
+    "domain": "zepp_health",
+    "name": "Zepp Health Import",
+    "codeowners": [
+        "@ndesgranges"
+    ],
+    "config_flow": true,
+    "dependencies": ["recorder", "file_upload"],
+    "documentation": "https://github.com/ndesgranges/zepp-health-ha",
+    "iot_class": "local_polling",
+    "issue_tracker": "https://github.com/ndesgranges/zepp-health-ha/issues",
+    "requirements": [],
+    "version": "1.0.0"
+}

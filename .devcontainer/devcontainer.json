@@ -1,0 +1,27 @@
+{
+  "name": "Zepp Health - Home Assistant",
+  "image": "ghcr.io/home-assistant/devcontainer:2024.1",
+  "forwardPorts": [8123],
+  "postCreateCommand": "scripts/setup",
+  "containerEnv": {
+    "TZ": "UTC"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint",
+        "ms-python.vscode-pylance",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.analysis.autoSearchPaths": true,
+        "python.analysis.extraPaths": ["/usr/src/homeassistant"]
+      }
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/custom_components,target=/config/custom_components,type=bind"
+  ]
+}

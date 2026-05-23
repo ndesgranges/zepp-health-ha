@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+pip install -r requirements.txt
+
+echo "
+Home Assistant dev environment ready.
+  - Custom component mounted at /config/custom_components/zepp_health
+  - Start HA with: hass -c /config
+  - Access UI at http://localhost:8123
+"

@@ -1,0 +1,25 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Extracted databases (don't commit these)
+zepp-databases/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+zepp_health_export.json
