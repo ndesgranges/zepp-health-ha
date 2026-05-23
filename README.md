@@ -4,7 +4,8 @@
 
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/ndesgranges/zepp-health-ha/master?style=for-the-badge)
 
-[![GitHub Release](https://img.shields.io/github/v/release/ndesgranges/zepp-health-ha?display_name=release&style=for-the-badge)](https://github.com/ndesgranges/zepp-health-ha/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/ndesgranges/zepp-health-ha?display_name=tag&style=for-the-badge
+)](https://github.com/ndesgranges/zepp-health-ha/releases)
 
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
