@@ -98,11 +98,6 @@ class ZeppHealthSensor(SensorEntity):  # pylint: disable=too-many-instance-attri
         self._last_date = last_date
 
     @property
-    def statistic_id(self) -> str:
-        """Return the statistic ID for linking history."""
-        return f"{DOMAIN}:{self._sensor_key}"
-
-    @property
     def device_info(self):
         """Return device info to group all sensors."""
         return {

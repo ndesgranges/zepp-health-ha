@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Importation Zepp Health",
+        "description": "Comment souhaitez-vous fournir le fichier d'export ?",
+        "menu_options": {
+          "upload": "Téléverser un fichier JSON",
+          "file_path": "Fournir le chemin du fichier (avancé)"
+        }
+      },
+      "upload": {
+        "title": "Téléverser l'export Zepp Health",
+        "description": "Téléversez le fichier zepp_health_export.json généré par le script d'extraction.",
+        "data": {
+          "file": "Fichier JSON d'export"
+        }
+      },
+      "file_path": {
+        "title": "Chemin du fichier",
+        "description": "Indiquez le chemin vers le fichier zepp_health_export.json sur le serveur HA.",
+        "data": {
+          "file_path": "Chemin vers zepp_health_export.json"
+        }
+      }
+    },
+    "error": {
+      "file_not_found": "Fichier introuvable au chemin spécifié.",
+      "invalid_json": "Le fichier n'est pas un JSON valide.",
+      "invalid_format": "Le fichier ne semble pas être un export Zepp Health (clé 'data' manquante).",
+      "unknown": "Une erreur inattendue est survenue."
+    }
+  },
+  "services": {
+    "import_history": {
+      "name": "Réimporter l'historique",
+      "description": "Réimporte toutes les données historiques à partir du fichier d'export précédemment stocké."
+    },
+    "import_file": {
+      "name": "Importer un fichier",
+      "description": "Téléversez un nouveau zepp_health_export.json et importez toutes les données historiques dans Home Assistant.",
+      "fields": {
+        "file": {
+          "name": "Fichier d'export",
+          "description": "Le fichier zepp_health_export.json à importer."
+        }
+      }
+    }
+  }
+}

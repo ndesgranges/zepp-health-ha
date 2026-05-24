@@ -14,7 +14,7 @@ fi
 
 echo 'Starting Home Assistant in development mode...
     - Custom component mounted at /config/custom_components/zepp_health
-    - Access UI at http://localhost:8123'
+    - Access UI at http://localhost:8123\n\n'
 
 # Start Home Assistant
 hass --config "${PWD}/config" --debug

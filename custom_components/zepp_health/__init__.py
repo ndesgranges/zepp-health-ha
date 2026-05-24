@@ -12,7 +12,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from homeassistant.components.file_upload import FileUploadData
+from homeassistant.components.file_upload import process_uploaded_file
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import (
@@ -23,6 +23,7 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import FileSelector, FileSelectorConfig
 import voluptuous as vol
 
@@ -279,7 +280,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register the import_history service (re-import from stored file)
     async def handle_import_history(_call: ServiceCall) -> None:
         """Handle the import_history service call."""
-        await _import_all_statistics(hass, entry.data["file_path"])
+        await _import_all_statistics(hass, entry)
 
     hass.services.async_register(DOMAIN, "import_history", handle_import_history)
 
@@ -291,10 +292,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.error("No file provided to import_file service")
             return
 
-        upload = await FileUploadData.async_get_instance(hass)
-        file_path = upload.get_file_path(file_id)
-        contents = await hass.async_add_executor_job(_read_file, str(file_path))
-        await hass.async_add_executor_job(upload.remove_file, file_id)
+        with process_uploaded_file(hass, file_id) as uploaded_path:
+            contents = await hass.async_add_executor_job(
+                _read_file, str(uploaded_path)
+            )
 
         # Validate
         try:
@@ -318,7 +319,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
         _LOGGER.info("New export file saved, starting import...")
-        await _import_all_statistics(hass, dest)
+        await _import_all_statistics(hass, entry)
 
         # Reload sensors to pick up new latest values
         await hass.config_entries.async_reload(entry.entry_id)
@@ -333,7 +334,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     # Auto-import on first setup
-    hass.async_create_task(_import_all_statistics(hass, entry.data["file_path"]))
+    hass.async_create_task(_import_all_statistics(hass, entry))
 
     return True
 
@@ -346,8 +347,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def _import_all_statistics(hass: HomeAssistant, file_path: str) -> None:
+async def _import_all_statistics(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Import all historical data as long-term statistics."""
+    file_path = entry.data["file_path"]
     _LOGGER.info("Starting Zepp Health historical data import from %s", file_path)
 
     try:
@@ -356,6 +358,8 @@ async def _import_all_statistics(hass: HomeAssistant, file_path: str) -> None:
         _LOGGER.error("Failed to load export file: %s", err)
         return
 
+    # Look up actual entity_ids from the entity registry
+    ent_reg = er.async_get(hass)
     imported_count = 0
 
     for sensor_key, sensor_def in SENSOR_DEFINITIONS.items():
@@ -363,7 +367,15 @@ async def _import_all_statistics(hass: HomeAssistant, file_path: str) -> None:
         if sensor_key == "resting_hr":
             continue
 
-        count = _import_sensor_statistics(hass, data, sensor_key, sensor_def)
+        unique_id = f"zepp_health_{sensor_key}"
+        entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, unique_id)
+        if not entity_id:
+            _LOGGER.debug("Entity not yet registered for %s, skipping", sensor_key)
+            continue
+
+        count = _import_sensor_statistics(
+            hass, data, sensor_key, sensor_def, entity_id
+        )
         imported_count += count
 
     _LOGGER.info(
@@ -372,7 +384,11 @@ async def _import_all_statistics(hass: HomeAssistant, file_path: str) -> None:
 
 
 def _import_sensor_statistics(
-    hass: HomeAssistant, data: dict, sensor_key: str, sensor_def: dict
+    hass: HomeAssistant,
+    data: dict,
+    sensor_key: str,
+    sensor_def: dict,
+    entity_id: str,
 ) -> int:
     """Import statistics for a single sensor and return data point count."""
     category = sensor_def["category"]
@@ -382,13 +398,13 @@ def _import_sensor_statistics(
         return 0
 
     statistics = []
-    for entry in dataset:
-        value = entry.get(field)
+    for record in dataset:
+        value = record.get(field)
         if value is None:
             continue
 
         # Parse the date to get a timestamp
-        date_str = entry.get("date")
+        date_str = record.get("date")
         if not date_str:
             continue
 
@@ -422,14 +438,14 @@ def _import_sensor_statistics(
     # Sort by time
     statistics.sort(key=lambda s: s["start"])
 
-    # Define the statistic metadata
-    statistic_id = f"{DOMAIN}:{sensor_key}"
+    # Use the entity_id as statistic_id with source "recorder"
+    # so the data appears in the entity's history graph
     metadata = StatisticMetaData(
         has_mean=True,
         has_sum=False,
         name=sensor_def["name"],
-        source=DOMAIN,
-        statistic_id=statistic_id,
+        source="recorder",
+        statistic_id=entity_id,
         unit_of_measurement=sensor_def["unit"],
     )
 
@@ -437,7 +453,7 @@ def _import_sensor_statistics(
     async_import_statistics(hass, metadata, statistics)
 
     _LOGGER.debug(
-        "Imported %d data points for %s", len(statistics), sensor_key
+        "Imported %d data points for %s (%s)", len(statistics), sensor_key, entity_id
     )
     return len(statistics)
 
