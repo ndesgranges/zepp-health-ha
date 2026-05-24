@@ -16,6 +16,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Home assistant dev
+config/
+
 # Extracted databases (don't commit these)
 zepp-databases/
 *.db

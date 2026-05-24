@@ -1,6 +1,6 @@
 {
   "name": "Zepp Health - Home Assistant",
-  "image": "ghcr.io/home-assistant/devcontainer:2024.1",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "forwardPorts": [8123],
   "postCreateCommand": "scripts/setup",
   "containerEnv": {
