@@ -17,7 +17,7 @@ from .const import DOMAIN, STORAGE_DIR, EXPORT_FILENAME
 _LOGGER = logging.getLogger(__name__)
 
 
-class ZeppHealthConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ZeppHealthConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # pylint: disable=abstract-method
     """Handle a config flow for Zepp Health Import."""
 
     VERSION = 1
